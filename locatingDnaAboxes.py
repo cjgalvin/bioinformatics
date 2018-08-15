@@ -1,7 +1,6 @@
-import time
-
 def ReverseComplement(Pattern):
-    comp_bps = {"A":"T","T":"A","G":"C","C":"G"}
+    """Returns reverse complement of Pattern"""
+    comp_bps = {"A":"T", "T":"A", "G":"C", "C":"G"}
     comp_seq = []
     
     for bp in Pattern:
@@ -10,6 +9,7 @@ def ReverseComplement(Pattern):
     return ''.join(comp_seq)
 
 def PatternToNumber(Pattern):
+    """Returns a numeric code for Pattern according to base pair sequence in Pattern"""
     sym_dict = {"A":0, "C":1, "G":2, "T":3}
     symbol = Pattern[-1]
     
@@ -21,9 +21,10 @@ def PatternToNumber(Pattern):
         return 4 * PatternToNumber(prefix) + sym_dict[symbol]
 
 def NumberToPattern(number, k):
+    """Returns the base pair sequence of length k based on number"""
     from itertools import product
     
-    bps = ["A","C","G","T"]
+    bps = ["A", "C", "G", "T"]
     mer_dict = {}
     
     for index, perm in enumerate(itertools.product(bps, repeat = k)):
@@ -31,10 +32,46 @@ def NumberToPattern(number, k):
 
     return [key for key, value in mer_dict.items() if value == number][0]    
 
+def Neighbors(Pattern, d):
+    """Generates a list of all kmers within a Hamming Distance <= d of Pattern"""
+    nts = ["A", "C", "G", "T"]
+    
+    #Exact match only case
+    if d is 0:
+        return [Pattern] #Square braces ensures a list is returned, otherwise string is returned
+    
+    #Recursion base case: last bp in pattern, returns all nts
+    if len(Pattern) is 1:
+        return nts
+    
+    #neighborhood_list stores the neighbors with Hamming Distance <= d
+    neighborhood_list = []
+    
+    #Create suffix of Pattern
+    suffix = Pattern[1:]
+    
+    #Recursively generate all suffixes to build neighborhood_list in next steps
+    suffix_neighbors = Neighbors(Pattern[1:], d)
+    
+    #Generate neighbors according to Hamming Distance logic
+    for text in suffix_neighbors:
+        
+        #If Hamming Distance < d, we can add any nt to the suffix
+        if HammingDistance(Pattern[1:], text) < d:
+            for nt in nts:
+                neighborhood_list.append(nt + text)
+            
+        #Otherwise, Hamming Distance = d, so we can only add back symbols from the pattern
+        else:
+            neighborhood_list.append(Pattern[0] + text)
+        
+    return neighborhood_list
     
 def FrequentWordsWithMismatchesAndReverseComplementsSorting(Text, k, d):
-    """Finds most frequent kmers and their reverse complements in text with up to d mismatches
-    Implementing frequency array and neighbors sorting algorithm from Coursera class"""
+    """Finds most frequent k-mers and their reverse complements in Text with d mismatches or less
+    Implements a frequency array and neighbors sorting algorithm to achieve significant reduction in run time relative to nested loops"""
+    
+    import time
     
     FrequencyDictionary = {}
     FrequentPatterns = []
@@ -66,7 +103,6 @@ def FrequentWordsWithMismatchesAndReverseComplementsSorting(Text, k, d):
         Index.append(ptn)
     
     #Flattens Index from a 2-D list to a 1-D list
-    #According to StackOverflow answer, one liner is very efficient w/o importing chain from itertools
     Index = [number for sublist in Index for number in sublist]
     
     #Sorts index for counting in next section
@@ -94,9 +130,3 @@ def FrequentWordsWithMismatchesAndReverseComplementsSorting(Text, k, d):
     print("Finding Frequent Numbers and Patterns took", finish-start)
     
     return FrequentPatterns
-        
-Text = "GCGTATTACACCACCGGTCACTACAGCATCTTTATAAAAGTGATGTGCAAATCAATTGACGCGCTTCAGCACGTACTTATCAACAAGATCCAAACAATTGATGAAATTCAGTCCACTGAGACACTGATCGTCTTGCAGAACCCGATCATGCGCACCATCAAGCCATGATCGGCTTTTTTAATCCCACATTTTTCCACAGGTAGATCCCAGCTCGTTCACAGAGTACAATGCAGCCTCTTTACCTGAGCGAGCGATCAATGGCAGACATTACTCTTATCAGCGGCAGCACCCTGGGCGGCGCCGAATACGTCGCGGAACATCTGGCGGAAAAGCTGGAAGCTGCCGGTTTTTCAACCGAAACGGTGCACGGTCCGTTATTAGAGGATCTGTCAACTTCCGGGATCTGGCTGATAATCAGCTCAACGCACGGCGCCGGAGACATTCCGGACAACCTGACCCCTTTCTATGAAGACCTTCAGACGCAGAAACCCGATCTTTCCGCGGTACGTTTCGGCGCAATTGGCATTGGCAGTCGAGAATACGACACGTTTTGCGGCGCGATTGAGAAAATAGAAGCGGAACTGAAAGGCGCTGGCGCAAAACAGGTTGGGGAAACACTGAAGATCAACATCCTTGAACATGAGATTCCGGAAGATCCAGCGGAGATTTGGCTCGGATCCTGGATTAATTTACTCAAATAAGTGTAAAGATCGTGCGATCTATTGTGGATAAATATGGTGAAAAGCTTGGATCAACCGGTAGTTATCCAAAGAATAACCTTTGTTCACTTTTTGAGTTGTGTATAAGTACCCGTTTTGATCCCAGCTTATACGGGCCACGATCACCGATCATTCACAGCTAGTGATCCTTTCCAACGCATTGATCTTTATTACAGGATCCGGGTTATCCACAGCCTGGTGCGATCCTAATAAGAGATCACAATAGAACAGATCTCTAAATAAAAAGATCTTCTTTTTAATAGCCCGGATCCCGGGGCTTT"
-k = 9
-d = 1
-
-FrequentWordsWithMismatchesAndReverseComplementsSorting(Text, k, d)
